@@ -27,10 +27,6 @@ jobs:
       - run: npm run build
         working-directory: spookfox-addon
 
-   
-      - run: mv ./addons-dist/*.xpi ./addons-dist/spookfox-ff.xpi
-        working-directory: spookfox-addon
-
       - run: mv ./addons-dist/*.crx ./addons-dist/spookfox-chrome.crx
         working-directory: spookfox-addon
 
@@ -38,5 +34,4 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            ./spookfox-addon/addons-dist/spookfox-ff.xpi
             ./spookfox-addon/addons-dist/spookfox-chrome.crx
