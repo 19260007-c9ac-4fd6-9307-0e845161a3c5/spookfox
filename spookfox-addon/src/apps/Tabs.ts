@@ -39,7 +39,8 @@ export default class Tabs implements SFApp<TabsState> {
   }
 
   async currentWindowId() {
-    const currentWindow = await browser.windows.getCurrent();
+    const currentWindow = await browser.windows.getLastFocused();
+
 
     return currentWindow.id;
   }
