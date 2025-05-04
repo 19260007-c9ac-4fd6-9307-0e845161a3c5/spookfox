@@ -27,12 +27,7 @@ jobs:
       - run: npm run build
         working-directory: spookfox-addon
 
-      - run: npm run publish:ff-unlisted
-        working-directory: spookfox-addon
-        env:
-          FIREFOX_ADDON_KEY: "${{ secrets.FIREFOX_ADDON_KEY }}"
-          FIREFOX_ADDON_SECRET: "${{ secrets.FIREFOX_ADDON_SECRET }}"
-
+   
       - run: mv ./addons-dist/*.xpi ./addons-dist/spookfox-ff.xpi
         working-directory: spookfox-addon
 
