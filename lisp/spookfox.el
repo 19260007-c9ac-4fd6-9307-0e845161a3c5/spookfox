@@ -1,21 +1,21 @@
-;;; spookfox --- Communicate with a browser which have spookfox browser addon installed. -*- lexical-binding: t -*-
-;;;
+;;; spookfox.el --- Communicate with a browser which have spookfox browser addon installed. -*- lexical-binding: t; -*-
+;;
 ;; Copyright © 2022 bitspook
 ;;
 ;; Author: bitspook
 ;; Homepage: https://bitspook.in/projects/spookfox
 ;; Keywords: Firefox
-;; Version: 0.5.1
+;; Version: 0.7.1
 ;; Package-Requires: ((websocket "1.13"))
 ;;
 ;;; Commentary:
-;;;
-;;; Spookfox provides means to communicate with your browser. It is (or should
-;;; be, after you write some code) capable of doing everything which the browser
-;;; allows its extensions to do.
-;;;
-;;; Please read the readme.org file in this repository for details.
-;;;
+;;
+;; Spookfox provides means to communicate with your browser. It is (or should
+;; be, after you write some code) capable of doing everything which the browser
+;; allows its extensions to do.
+;;
+;; Please read the readme.org file in this repository for details.
+;;
 ;;; Code:
 (require 'cl-lib)
 (require 'json)
@@ -24,10 +24,8 @@
 (require 'org-id)
 (require 'websocket)
 
-(defvar spookfox-version "0.5.1"
+(defvar spookfox-version "0.7.1"
   "Spookfox version.")
-(defvar spookfox-enabled-apps nil
-  "List of Spookfox Apps that should be enabled in all new clients.")
 (defvar spookfox--responses nil
   "Alist of responses received. Key is the request-id, val is the response.")
 (defvar spookfox--req-handlers-alist nil
@@ -41,10 +39,12 @@
   "String to prefix names of messages sent by `spookfox-request'.")
 (defvar spookfox-debug nil
   "When non-nil, spookfox will log its communication in *spookfox* buffer.")
-(defvar spookfox--active-apps
-  "List of actually active apps. This is same as
-spookfox-enabled-apps, but also has dependencies of enabled-apps
-resolved.")
+
+(defvar spookfox-client-connected-hook nil
+  "Hook that gets called every time a new client connects to spookfox server.")
+
+(defvar spookfox-client-disconnected-hook nil
+  "Hook that gets called every time a client connected to spookfox server disconnects.")
 
 ;; lib
 (defun spookfox--string-blank-p (str)
@@ -62,14 +62,14 @@ Considers hard-space (ASCII 160) as space."
 
 (defun spookfox--handle-new-client (ws)
   "When a new client connects, save the connected websocket WS."
-  (push ws spookfox--connected-clients)
-  (dolist (app spookfox--active-apps)
-    (spookfox-request ws 'enable-app (plist-get app :name)))
+  (cl-pushnew ws spookfox--connected-clients)
+  (run-hook-with-args 'spookfox-client-connected-hook ws)
   (spookfox--log "[CONNECTED] Total clients: %s" (length spookfox--connected-clients)))
 
 (defun spookfox--handle-disconnect-client (ws)
   "When a client connection closes, remove the websocket WS from saved sockets."
   (setf spookfox--connected-clients (cl-remove-if (lambda (saved-ws) (eq saved-ws ws)) spookfox--connected-clients))
+  (run-hook-with-args 'spookfox-client-disconnected-hook ws)
   (spookfox--log "[DISCONNECTED] Total clients: %s" (length spookfox--connected-clients)))
 
 (defun spookfox--handle-server-error (_ws sym err)
@@ -106,8 +106,10 @@ request-id as key."
         ;; don't just keep lying around in `spookfox--responses'
         (push (cons (plist-get msg :requestId) msg) spookfox--responses)))))
 
+;;;###autoload
 (defun spookfox-start-server ()
   "Start websockets server."
+  (interactive)
   (setf spookfox--connected-clients nil)
 
   (when (and spookfox--server-process
@@ -199,25 +201,12 @@ Return value of HANDLER is sent back to browser as response."
     (when cell (warn "Handler already registered. Overwriting previously registered handler."))
     (push (cons name handler) spookfox--req-handlers-alist)))
 
+;;;###autoload
 (defun spookfox-init ()
-  "Initialize spookfox with enabled apps."
-  (let* ((is-app-eql (lambda (a b)
-                       (eql (plist-get a :name)
-                            (plist-get b :name))))
-         (flattened-apps
-          (let ((accum nil))
-            (dolist (app spookfox-enabled-apps (reverse accum))
-              (dolist (dep (plist-get (symbol-value app) :dependencies))
-                (cl-pushnew dep accum :test is-app-eql))
-              (cl-pushnew (symbol-value app) accum :test is-app-eql)))))
-
-    (setf spookfox--active-apps flattened-apps)
-    (dolist (app spookfox--active-apps)
-      (require (plist-get app :name))
-      (when-let ((on-init (plist-get app :on-init)))
-        (funcall on-init))))
-
+  "Initialize spookfox.
+This function is obsolete. Please use spookfox-start-server."
   (spookfox-start-server))
+(make-obsolete #'spookfox-init #'spookfox-start-server 'v0.6.0)
 
 (defun spookfox-shutdown ()
   "Stop spookfox."
@@ -225,3 +214,4 @@ Return value of HANDLER is sent back to browser as response."
   (spookfox-stop-server))
 
 (provide 'spookfox)
+;;; spookfox.el ends here

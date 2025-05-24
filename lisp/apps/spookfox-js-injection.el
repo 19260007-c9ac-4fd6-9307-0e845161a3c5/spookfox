@@ -8,6 +8,7 @@
 (require 'org-id)
 (require 'cl-lib)
 (require 'spookfox)
+(require 'spookfox-tabs)
 
 (defvar sfjsi--msg-prefix "JS_INJECT_")
 
@@ -62,6 +63,7 @@ with result of execution from each selected tab."
                       :payload)))
      selected-tabs)))
 
+;;;###autoload
 (cl-defun sfjsi-eval (js &optional (context 'background) (select-tab-p nil))
   "Evaluate JS in CONTEXT. Return the result of evaluation.
 
@@ -83,9 +85,6 @@ Supported contexts:
                      :payload))
         (tab (sfjsi--eval-in-tabs client js select-tab-p))
         (t (error "Unsupported context: %s" context))))))
-
-;;;###autoload
-(defvar spookfox-js-injection '(:name spookfox-js-injection))
 
 (provide 'spookfox-js-injection)
 ;;; spookfox-js-injection.el ends here

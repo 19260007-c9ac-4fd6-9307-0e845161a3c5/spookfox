@@ -5,7 +5,6 @@ import iconEmacsColor from './icons/emacs-color.svg';
 import Tabs from './apps/Tabs';
 import OrgTabs from './apps/OrgTabs';
 import JsInject from './apps/JsInject';
-import Jscl from './apps/Jscl';
 import browser from 'webextension-polyfill';
 import Windows from './apps/Windows';
 
@@ -79,34 +78,10 @@ const startAutoconnectTimer = (sf: Spookfox) => {
 const run = async () => {
   const sf = ((window as any).spookfox = new Spookfox());
 
-  sf.registerReqHandler('ENABLE_APP', (name: string) => {
-    switch (name) {
-      case 'spookfox-tabs': {
-        sf.registerApp('tabs', Tabs);
-        break;
-      }
-      case 'spookfox-org-tabs': {
-        sf.registerApp('org-tabs', OrgTabs);
-        break;
-      }
-      case 'spookfox-js-injection': {
-        sf.registerApp('js-injection', JsInject);
-        break;
-      }
-      case 'spookfox-jscl': {
-        sf.registerApp('jscl', Jscl);
-        break;
-      }
-      case 'spookfox-windows': {
-        sf.registerApp('spookfox-windows', Windows);
-        break;
-      }
-      default:
-        return { status: 'error', message: `Uknown app ${name}` };
-    }
-
-    return { status: 'ok' };
-  });
+  // register all available apps
+  sf.registerApp('js-injection', JsInject);
+  sf.registerApp('tabs', Tabs);
+  sf.registerApp('spookfox-windows', Windows);
 
   startAutoconnectTimer(sf);
 };
